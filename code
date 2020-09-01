@@ -1,0 +1,15 @@
+#First Download playbyplay data...
+
+#Create new variable. LOS_AIR is where pass ends up on field, 0 is saftey, 100 is touchdown 
+NFL_pbp2019 <- NFL_pbp2019 %>% mutate(LOS = 100 - yardline_100, LOS_AIR = (100-yardline_100) + air_yards )
+
+# I didnt like the NFLFastR td_prob, so I made my own
+# I think using XYAC here may be a good idea...
+tdprob<-glm(as.factor(touchdown) ~  LOS_AIR + cp,
+            data = NFL_pbp2019, family = "binomial")
+
+#using the logistic regression model to put my own TDprob into PBP data
+NFL_pbp2019$tdprob2<-predict(tdprob,NFL_pbp2019, type = "response")
+
+#Creating EX_FP, withing the PBP data
+NFL_pbp2019 <- NFL_pbp2019 %>% mutate(Ex_FP = cp + cp * air_yards * .1 + cp * xyac_median_yardage * .1 + cp * tdprob2 * 6  )
